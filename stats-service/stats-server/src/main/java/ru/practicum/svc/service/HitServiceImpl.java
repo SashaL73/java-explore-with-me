@@ -64,6 +64,8 @@ public class HitServiceImpl implements HitService {
             hits = hitRepository.searchHitsByUris(start, end, uris);
         }
 
+        System.out.println("Получение статистики");
+
         return hits.stream()
                 .map(HitMapper::mapViewStatsProjectionToViewStats)
                 .toList();
