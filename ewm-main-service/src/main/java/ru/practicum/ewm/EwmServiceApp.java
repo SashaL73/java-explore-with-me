@@ -27,7 +27,7 @@ public class EwmServiceApp {
                     .app("ewm-main-service")
                     .ip("1.1.1.1")
                     .uri("/events")
-                    .timestamp(LocalDateTime.now().format(formatter))
+                    .timestamp(LocalDateTime.parse(LocalDateTime.now().format(formatter)))
                     .build();
 
             statsClient.saveHit(endpointHit);

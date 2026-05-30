@@ -13,15 +13,12 @@ import ru.practicum.svc.service.HitService;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(HitController.class)
 public class HitControllerTest {
-
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Autowired
     private MockMvc mockMvc;
@@ -38,7 +35,7 @@ public class HitControllerTest {
                 .app("test")
                 .ip("1.1.1.1")
                 .uri("/test")
-                .timestamp(LocalDateTime.now().format(formatter))
+                .timestamp(LocalDateTime.now())
                 .build();
 
         mockMvc.perform(post("/hit")

@@ -13,7 +13,6 @@ import ru.practicum.svc.model.Hit;
 import ru.practicum.svc.repository.HitRepository;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,8 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class HitServiceIntegrationTest {
 
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
     private final HitService hitService;
     private final HitRepository hitRepository;
 
@@ -35,7 +32,7 @@ public class HitServiceIntegrationTest {
                 .app("test")
                 .ip("1.1.1.1")
                 .uri("/test")
-                .timestamp(LocalDateTime.now().format(formatter))
+                .timestamp(LocalDateTime.now())
                 .build();
 
         hitService.createHit(endpointHit);
@@ -213,7 +210,6 @@ public class HitServiceIntegrationTest {
         assertThrows(BadRequestException.class, () -> hitService.getViewStatsByUris(LocalDateTime.now(),
                 LocalDateTime.now().minusDays(1), null, false));
     }
-
 
 
 }

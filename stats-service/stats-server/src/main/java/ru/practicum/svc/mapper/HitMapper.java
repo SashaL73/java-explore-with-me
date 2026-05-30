@@ -5,19 +5,14 @@ import ru.practicum.svc.ViewStats;
 import ru.practicum.svc.model.Hit;
 import ru.practicum.svc.repository.projection.ViewStatsProjection;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
 public class HitMapper {
-
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public static Hit mapToHit(EndpointHit endpointHit) {
         return Hit.builder()
                 .ip(endpointHit.getIp())
                 .uri(endpointHit.getUri())
                 .app(endpointHit.getApp())
-                .timestamp(LocalDateTime.parse(endpointHit.getTimestamp(), formatter))
+                .timestamp(endpointHit.getTimestamp())
                 .build();
     }
 
