@@ -114,8 +114,8 @@ public class ParticipationServiceImpl implements ParticipationService {
 
     @Override
     @Transactional
-    public EventRequestStatusUpdateResult updateStatusRequestsByOwnerEvent
-            (Long userId, Long eventId, EventRequestStatusUpdateRequest request) {
+    public EventRequestStatusUpdateResult updateStatusRequestsByOwnerEvent(
+            Long userId, Long eventId, EventRequestStatusUpdateRequest request) {
         log.info("Обновление статуса заявки eventId={}, пользователем id={}, request={}", eventId, userId, request);
         Event event = findEventOrElseThrow(eventId);
 
