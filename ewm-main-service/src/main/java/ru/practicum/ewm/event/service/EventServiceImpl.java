@@ -143,7 +143,6 @@ public class EventServiceImpl implements EventService {
         saveHit(request.getRequestURI(), request.getRemoteAddr());
 
         Map<Long, Long> viewById = eventViews.getView(List.of(event.getId()));
-        System.out.println("Event id" + event.getId() + " " + viewById.get(event.getId()));
         return EventMapper.mapToEventFullDto(event,
                 categoryDto,
                 requestsMapCount.get(event.getId()),
@@ -265,7 +264,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findEventByIdWithCategoryAndInitiator(eventId);
 
         if (request.eventDate() != null && request.eventDate().isBefore(LocalDateTime.now().plusHours(1))) {
-            throw new BadRequestException("Event date must be at least 1 hour after publication");
+            throw new BadRequestException("Дата события должна быть не позднее чем через 1 час после публикации");
         }
 
         if (request.category() != null) {

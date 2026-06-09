@@ -6,6 +6,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import ru.practicum.ewm.category.dto.CategoryDto;
 import ru.practicum.ewm.category.dto.NewCategoryDto;
 import ru.practicum.ewm.category.model.Category;
@@ -137,8 +139,8 @@ public class CategoryServiceTest {
     void getCategoriesTest() {
         List<Category> categories = List.of(category);
 
-        Mockito.when(categoryRepository.findCategoriesWithFromAndSize(Mockito.anyLong(), Mockito.anyLong()))
-                .thenReturn(categories);
+        Mockito.when(categoryRepository.findAll(Mockito.any(Pageable.class)))
+                .thenReturn(new PageImpl<>(categories));
 
         List<CategoryDto> categoryDtos = categoryServiceImpl.getCategories(0L, 10L);
 

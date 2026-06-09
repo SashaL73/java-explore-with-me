@@ -9,6 +9,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.category.repository.CategoryRepository;
+import ru.practicum.ewm.common.exception.BadRequestException;
+import ru.practicum.ewm.common.exception.ConflictException;
+import ru.practicum.ewm.common.exception.NotFoundException;
 import ru.practicum.ewm.event.dto.*;
 import ru.practicum.ewm.event.model.*;
 import ru.practicum.ewm.event.repository.EventRepository;
@@ -216,6 +219,30 @@ class EventServiceTest {
     }
 
     @Test
+    void getEventsEndBeforeStartShouldReturnBadRequestException() {
+        LocalDateTime rangeStart = LocalDateTime.now().plusDays(2);
+        LocalDateTime rangeEnd = LocalDateTime.now().plusDays(1);
+
+        BadRequestException exception = assertThrows(BadRequestException.class,
+                () -> eventService.getEvents(
+                        null,
+                        null,
+                        null,
+                        rangeStart,
+                        rangeEnd,
+                        null,
+                        SortEvent.VIEWS,
+                        0L,
+                        10L,
+                        httpServletRequest
+                )
+        );
+
+        assertEquals("Дата начала позже даты конца", exception.getMessage());
+
+    }
+
+    @Test
     void getEventsAdminTest() {
         Event event = createEvent(EventState.PUBLISHED);
 
@@ -337,6 +364,17 @@ class EventServiceTest {
     }
 
     @Test
+    void createEventEventDateIsBefore2HoursShouldReturnBadRequestException() {
+        NewEventDto newEventDto = createNewEventDto(LocalDateTime.now().plusHours(1));
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(createUser()));
+
+        assertThrows(BadRequestException.class, () -> eventService.createEvent(1L, newEventDto));
+
+    }
+
+    @Test
     void getEventByOwnerTest() {
         Event event = createEvent(EventState.PENDING);
 
@@ -407,16 +445,68 @@ class EventServiceTest {
     }
 
     @Test
+    void updateEventByOwnerEventPublishedShouldConflictException() {
+        Event event = createEvent(EventState.PUBLISHED);
+
+        UpdateEventUserRequest request = createUpdateUserRequest(
+                2L,
+                LocalDateTime.now()
+        );
+
+        when(userRepository.findById(anyLong()))
+                .thenReturn(Optional.of(createUser()));
+
+        when(eventRepository.findByIdAndEventInitiatorId(anyLong(), anyLong()))
+                .thenReturn(Optional.of(event));
+
+        ConflictException exception = assertThrows(
+                ConflictException.class,
+                () -> eventService.updateEventByOwner(1L, 1L, request)
+        );
+
+        assertEquals("Только ожидающие события могут быть опубликованы", exception.getMessage());
+
+    }
+
+    @Test
+    void updateEventByOwnerEventDateIsBefore2HoursShouldBadRequestException() {
+        Event event = createEvent(EventState.PENDING);
+
+        UpdateEventUserRequest request = createUpdateUserRequest(
+                2L,
+                LocalDateTime.now().plusHours(1)
+        );
+
+        when(userRepository.findById(anyLong()))
+                .thenReturn(Optional.of(createUser()));
+
+        when(eventRepository.findByIdAndEventInitiatorId(anyLong(), anyLong()))
+                .thenReturn(Optional.of(event));
+
+        assertThrows(BadRequestException.class, () -> eventService.updateEventByOwner(1L, 1L, request));
+
+    }
+
+    @Test
     void updateEventAdminTest() {
         Event event = createEvent(EventState.PENDING);
+
+        Category category = Category.builder()
+                .id(2L)
+                .name("Test2")
+                .build();
 
         UpdateEventAdminRequest request = UpdateEventAdminRequest.builder()
                 .stateAction(AdminStateAction.PUBLISH_EVENT)
                 .eventDate(LocalDateTime.now().plusHours(2))
+                .category(2L)
                 .build();
 
         when(eventRepository.findEventByIdWithCategoryAndInitiator(1L))
                 .thenReturn(event);
+
+        when(categoryRepository.findById(2L))
+                .thenReturn(Optional.ofNullable(category));
 
         when(eventRepository.save(any(Event.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -434,6 +524,103 @@ class EventServiceTest {
         assertEquals(1L, result.id());
         assertEquals(EventState.PUBLISHED, event.getEventState());
         assertNotNull(event.getPublishedOn());
+    }
+
+    @Test
+    void updateEventAdminRejectedTest() {
+        Event event = createEvent(EventState.PENDING);
+
+        UpdateEventAdminRequest request = UpdateEventAdminRequest.builder()
+                .stateAction(AdminStateAction.REJECT_EVENT)
+                .eventDate(LocalDateTime.now().plusHours(2))
+                .build();
+
+        when(eventRepository.findEventByIdWithCategoryAndInitiator(1L))
+                .thenReturn(event);
+
+        when(eventRepository.save(any(Event.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(participationRepository.countByEventIdsAndStatus(
+                List.of(1L),
+                ParticipationStatus.CONFIRMED
+        )).thenReturn(List.of(createProjection(1L, 0L)));
+
+        when(eventViews.getView(List.of(1L)))
+                .thenReturn(Map.of(1L, 0L));
+
+        EventFullDto eventFullDto = eventService.updateEventAdmin(1L, request);
+
+        assertEquals(1L, eventFullDto.id());
+        assertEquals(EventState.CANCELED, event.getEventState());
+    }
+
+    @Test
+    void updateEventAdminEventDateIsBefore1HourShouldBadRequestException() {
+        Event event = createEvent(EventState.PENDING);
+
+        UpdateEventAdminRequest request = UpdateEventAdminRequest.builder()
+                .eventDate(LocalDateTime.now().plusMinutes(30))
+                .build();
+
+        when(eventRepository.findEventByIdWithCategoryAndInitiator(anyLong()))
+                .thenReturn(event);
+
+        BadRequestException exception = assertThrows(BadRequestException.class,
+                () -> eventService.updateEventAdmin(1L, request));
+
+        assertEquals("Дата события должна быть не позднее чем через 1 час после публикации", exception.getMessage());
+    }
+
+    @Test
+    void updateEventAdminEventCategoryNotFoundException() {
+        Event event = createEvent(EventState.PENDING);
+
+        UpdateEventAdminRequest request = UpdateEventAdminRequest.builder()
+                .category(2L)
+                .build();
+
+        when(eventRepository.findEventByIdWithCategoryAndInitiator(anyLong()))
+                .thenReturn(event);
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> eventService.updateEventAdmin(1L, request));
+
+        assertEquals("Категория с id=2 не найдена", exception.getMessage());
+    }
+
+    @Test
+    void updateEventAdminEventNotPendingConflictException() {
+        Event event = createEvent(EventState.CANCELED);
+
+        UpdateEventAdminRequest request = UpdateEventAdminRequest.builder()
+                .stateAction(AdminStateAction.PUBLISH_EVENT)
+                .build();
+
+        when(eventRepository.findEventByIdWithCategoryAndInitiator(anyLong()))
+                .thenReturn(event);
+
+        ConflictException exception = assertThrows(ConflictException.class,
+                () -> eventService.updateEventAdmin(1L, request));
+
+        assertEquals("Только ожидающие события события могут быть опубликованы", exception.getMessage());
+    }
+
+    @Test
+    void updateEventAdminEventPublishCantCancelConflictException() {
+        Event event = createEvent(EventState.PUBLISHED);
+
+        UpdateEventAdminRequest request = UpdateEventAdminRequest.builder()
+                .stateAction(AdminStateAction.REJECT_EVENT)
+                .build();
+
+        when(eventRepository.findEventByIdWithCategoryAndInitiator(anyLong()))
+                .thenReturn(event);
+
+        ConflictException exception = assertThrows(ConflictException.class,
+                () -> eventService.updateEventAdmin(1L, request));
+
+        assertEquals("Опубликованное событие не может быть отменено", exception.getMessage());
     }
 
 

@@ -2,6 +2,7 @@ package ru.practicum.ewm.category.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.category.dto.CategoryDto;
@@ -13,7 +14,10 @@ import ru.practicum.ewm.common.exception.ConflictException;
 import ru.practicum.ewm.common.exception.NotFoundException;
 import ru.practicum.ewm.event.repository.EventRepository;
 
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -28,11 +32,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryDto createCategory(NewCategoryDto newCategoryDto) {
         Category category = CategoryMapper.mapToCategory(newCategoryDto);
-        try {
-            categoryRepository.saveAndFlush(category);
-        } catch (DataIntegrityViolationException ex) {
-            throw new ConflictException(ex.getMessage());
-        }
+        category = saveCategoryOrThrow(category);
         return CategoryMapper.mapToCategoryDto(category);
     }
 
@@ -52,23 +52,22 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryDto updateCategory(Long catId, CategoryDto categoryDto) {
         Category category = findCategoryOrThrow(catId);
-
-        try {
-            if (categoryDto.name() != null && !categoryDto.name().isBlank()) {
-                category.setName(categoryDto.name());
-                categoryRepository.saveAndFlush(category);
-            }
-
-        } catch (DataIntegrityViolationException ex) {
-            throw new ConflictException(ex.getMessage());
+        if (!Objects.isNull(categoryDto.name()) && !categoryDto.name().isBlank()) {
+            category.setName(categoryDto.name());
+            category = saveCategoryOrThrow(category);
         }
 
         return CategoryMapper.mapToCategoryDto(category);
     }
 
     @Override
+    @Transactional
     public List<CategoryDto> getCategories(Long from, Long size) {
-        return categoryRepository.findCategoriesWithFromAndSize(from, size).stream()
+        Pageable pageable = PageRequest.of(Math.toIntExact(from), Math.toIntExact(size));
+
+        List<Category> categories = categoryRepository.findAll(pageable).getContent();
+
+        return categories.stream()
                 .map(CategoryMapper::mapToCategoryDto)
                 .toList();
     }
@@ -81,6 +80,14 @@ public class CategoryServiceImpl implements CategoryService {
 
     private Category findCategoryOrThrow(Long catId) {
         return categoryRepository.findById(catId)
-                .orElseThrow(() -> new NotFoundException("The required object was not found."));
+                .orElseThrow(() -> new NotFoundException("Категория не найдена"));
+    }
+
+    private Category saveCategoryOrThrow(Category category) {
+        try {
+            return categoryRepository.saveAndFlush(category);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ConflictException("Категория с таким названием уже существует");
+        }
     }
 }
