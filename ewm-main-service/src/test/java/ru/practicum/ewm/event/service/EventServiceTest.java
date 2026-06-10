@@ -623,5 +623,36 @@ class EventServiceTest {
         assertEquals("Опубликованное событие не может быть отменено", exception.getMessage());
     }
 
+    @Test
+    void getSubscriptionEventsTest() {
+        Event event = createEvent(EventState.PUBLISHED);
+
+        when(userRepository.findById(anyLong()))
+                .thenReturn(Optional.ofNullable(createUser()));
+
+        when(eventRepository.findSubscribedUsersEvents(anyLong(), any(EventState.class)))
+                .thenReturn(List.of(event));
+
+        when(participationRepository.countByEventIdsAndStatus(
+                List.of(1L),
+                ParticipationStatus.CONFIRMED
+        )).thenReturn(List.of(createProjection(1L, 1L)));
+
+        when(eventViews.getView(List.of(1L)))
+                .thenReturn(Map.of(1L, 5L));
+
+
+        List<EventShortDto> eventShortDtoList = eventService.getSubscriptionEvents(2L);
+
+        assertEquals(1, eventShortDtoList.size());
+    }
+
+    @Test
+    void getSubscriptionEventNotExistSubscriberShouldReturnNotFoundExceptionTest() {
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> eventService.getSubscriptionEvents(2L));
+
+        assertEquals("Пользователь с id=2 не найден", exception.getMessage());
+    }
 
 }

@@ -17,4 +17,7 @@ public class User {
     private String name;
     @Column(unique = true)
     private String email;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private UserStatus status;
 }

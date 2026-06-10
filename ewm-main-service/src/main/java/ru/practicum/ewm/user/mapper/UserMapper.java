@@ -4,12 +4,14 @@ import ru.practicum.ewm.user.dto.NewUserRequest;
 import ru.practicum.ewm.user.dto.UserDto;
 import ru.practicum.ewm.user.dto.UserShortDto;
 import ru.practicum.ewm.user.model.User;
+import ru.practicum.ewm.user.model.UserStatus;
 
 public class UserMapper {
     public static User mapToUser(NewUserRequest request) {
         return User.builder()
                 .email(request.email())
                 .name(request.name())
+                .status(UserStatus.PUBLIC)
                 .build();
     }
 
@@ -18,6 +20,7 @@ public class UserMapper {
                 .email(user.getEmail())
                 .name(user.getName())
                 .id(user.getId())
+                .status(user.getStatus())
                 .build();
     }
 

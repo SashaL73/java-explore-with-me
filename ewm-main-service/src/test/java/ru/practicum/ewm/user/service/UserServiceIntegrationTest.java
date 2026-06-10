@@ -11,6 +11,7 @@ import ru.practicum.ewm.common.exception.NotFoundException;
 import ru.practicum.ewm.user.dto.NewUserRequest;
 import ru.practicum.ewm.user.dto.UserDto;
 import ru.practicum.ewm.user.model.User;
+import ru.practicum.ewm.user.model.UserStatus;
 import ru.practicum.ewm.user.repository.UserRepository;
 
 import java.util.List;
@@ -34,6 +35,7 @@ public class UserServiceIntegrationTest {
     private final User user = User.builder()
             .name("Test")
             .email("test@test.com")
+            .status(UserStatus.PUBLIC)
             .build();
 
 

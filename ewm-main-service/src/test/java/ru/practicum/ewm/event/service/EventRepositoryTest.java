@@ -20,6 +20,7 @@ import ru.practicum.ewm.participation.model.ParticipationRequest;
 import ru.practicum.ewm.participation.model.ParticipationStatus;
 import ru.practicum.ewm.participation.repository.ParticipationRepository;
 import ru.practicum.ewm.user.model.User;
+import ru.practicum.ewm.user.model.UserStatus;
 import ru.practicum.ewm.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
@@ -52,6 +53,7 @@ class EventRepositoryTest {
         return User.builder()
                 .name(name)
                 .email(email)
+                .status(UserStatus.PUBLIC)
                 .build();
     }
 

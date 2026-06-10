@@ -17,6 +17,7 @@ import ru.practicum.ewm.event.model.EventState;
 import ru.practicum.ewm.event.model.Location;
 import ru.practicum.ewm.event.repository.EventRepository;
 import ru.practicum.ewm.user.model.User;
+import ru.practicum.ewm.user.model.UserStatus;
 import ru.practicum.ewm.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
@@ -47,6 +48,7 @@ public class CategoryServiceIntegrationTest {
     private final User user = User.builder()
             .name("Test")
             .email("test@test.com")
+            .status(UserStatus.PUBLIC)
             .build();
 
     private final CategoryDto categoryDto = CategoryDto.builder()
