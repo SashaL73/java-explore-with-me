@@ -131,6 +131,15 @@ public class UserSubscriptionServiceTest {
     }
 
     @Test
+    void subscribeUserTargetUserNotExistShouldReturnNotFoundException() {
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> userSubscriptionService.subscribe(1L, 2L));
+
+        assertEquals("Пользователя с id = 2 нет", exception.getMessage());
+
+    }
+
+    @Test
     void unsubscribeTest() {
         when(userRepository.findById(1L))
                 .thenReturn(Optional.ofNullable(createUser(1L, UserStatus.PUBLIC)));

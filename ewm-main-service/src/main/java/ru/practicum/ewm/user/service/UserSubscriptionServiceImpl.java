@@ -31,6 +31,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     @Transactional
     public void subscribe(Long userId, Long targetUserId) {
         log.info("Добавление подписки пользователем userId={} на пользователя targetUserId={}", userId, targetUserId);
+        findUserOrThrow(targetUserId);
         if (userId.equals(targetUserId)) {
             throw new ConflictException("Пользователь не может подписаться на себя");
         }
