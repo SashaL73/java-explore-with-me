@@ -11,7 +11,9 @@ import ru.practicum.ewm.user.dto.NewUserRequest;
 import ru.practicum.ewm.user.dto.UserDto;
 import ru.practicum.ewm.user.mapper.UserMapper;
 import ru.practicum.ewm.user.model.User;
+import ru.practicum.ewm.user.model.UserStatus;
 import ru.practicum.ewm.user.repository.UserRepository;
+import ru.practicum.ewm.user.repository.UserSubscriptionRepository;
 
 import java.util.List;
 
@@ -22,6 +24,7 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final UserSubscriptionRepository userSubscriptionRepository;
 
     @Override
     @Transactional
@@ -57,8 +60,21 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(id);
     }
 
-    private void findUserOrThrow(Long id) {
-        userRepository.findById(id)
+    @Override
+    @Transactional
+    public UserDto setStatus(Long userId, UserStatus status) {
+        User user = findUserOrThrow(userId);
+        user.setStatus(status);
+        userRepository.save(user);
+
+        if (UserStatus.PRIVATE.equals(status)) {
+            userSubscriptionRepository.deleteAllByTargetUserId(userId);
+        }
+        return UserMapper.mapToUserDto(user);
+    }
+
+    private User findUserOrThrow(Long id) {
+        return userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователя с id = " + id + " нет"));
 
     }

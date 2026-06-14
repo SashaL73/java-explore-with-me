@@ -298,6 +298,14 @@ public class EventServiceImpl implements EventService {
 
     }
 
+    @Override
+    public List<EventShortDto> getSubscriptionEvents(Long subscriberId) {
+        log.info("Получение событий пользователей на которых подписался userId={}", subscriberId);
+        findUserOrElseThrow(subscriberId);
+        List<Event> eventList = eventRepository.findSubscribedUsersEvents(subscriberId, EventState.PUBLISHED);
+        return getEventShortDtos(eventList, ParticipationStatus.CONFIRMED);
+    }
+
     private List<EventShortDto> getEventShortDtos(List<Event> events, ParticipationStatus status) {
         List<Long> eventsIds = events.stream().map(Event::getId).toList();
         Map<Long, Long> requestsMapCount = requestsCountByIdEvent(eventsIds, status);

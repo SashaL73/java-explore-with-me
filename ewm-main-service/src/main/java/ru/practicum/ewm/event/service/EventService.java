@@ -41,4 +41,6 @@ public interface EventService {
 
     EventFullDto updateEventAdmin(Long eventId, UpdateEventAdminRequest request);
 
+    List<EventShortDto> getSubscriptionEvents(Long subscriberId);
+
 }
